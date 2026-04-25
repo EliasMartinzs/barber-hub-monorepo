@@ -12,7 +12,7 @@ async function bootstrap() {
   app.use(express.json());
 
   app.enableCors({
-    origin: true,
+    origin: 'http://localhost:3001',
     credentials: true,
   });
 

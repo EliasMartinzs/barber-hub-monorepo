@@ -5,6 +5,7 @@ export class RegisterDto {
   email: string;
 
   @IsString()
+  @MinLength(2)
   name: string;
 
   @IsString()
@@ -13,7 +14,7 @@ export class RegisterDto {
   password: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(2)
   @MaxLength(64)
   tenantName: string;
 
