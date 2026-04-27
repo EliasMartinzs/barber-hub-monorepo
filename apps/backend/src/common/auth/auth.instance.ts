@@ -17,7 +17,7 @@ export const createAuth = (prisma: PrismaService, mailService: MailService) =>
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url, token }, request) => {
         const fixedUrl = decodeURIComponent(url);
-        console.log(fixedUrl);
+
         await mailService.sendEmail({
           to: user.email,
           subject: 'Reset your password',
@@ -28,10 +28,8 @@ export const createAuth = (prisma: PrismaService, mailService: MailService) =>
           },
         });
       },
-      onPasswordReset: async ({ user }, request) => {
-        // your logic here
-        console.log(`Password for user ${user.email} has been reset.`);
-      },
+
+      onPasswordReset: async ({ user }, request) => {},
     },
     user: {
       deleteUser: {
@@ -47,7 +45,7 @@ export const createAuth = (prisma: PrismaService, mailService: MailService) =>
         await mailService.sendEmail({
           to: user.email,
           subject: 'Verify your email address',
-          template: 'signup-confirmation-template',
+          template: 'send-email-verification-template',
           context: {
             name: user.name,
             url: fixedUrl,
@@ -57,9 +55,7 @@ export const createAuth = (prisma: PrismaService, mailService: MailService) =>
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
-      //   Auto Rotation if user is active
       updateAge: 60 * 40 * 24,
-      //   Anti violation session
       freshAge: 60 * 60 * 2,
     },
     advanced: {

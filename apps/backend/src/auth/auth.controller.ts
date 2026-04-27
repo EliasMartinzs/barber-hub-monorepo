@@ -9,15 +9,14 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { User } from 'better-auth';
+import { LoginResponse } from '@repo/shared/auth';
 import type { Request, Response } from 'express';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
-import { LoginResponse } from 'src/auth/types/login-response';
+import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
 import { AUTH_INSTANCE } from 'src/common/auth/auth';
-import { ApiResponse } from 'src/types/api-response';
 import { AuthService } from './auth.service';
 
 @ApiTags('api/auth')
@@ -29,28 +28,11 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body() body: RegisterDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<ApiResponse<User>> {
-    const result = await this.authService.register(body);
-
-    if (result.error) {
-      return {
-        data: null,
-        error: {
-          message: result.error.message,
-          status: String(result.error.status),
-        },
-      };
-    }
-
-    const setCookie = result.data?.headers?.get('set-cookie');
-    if (setCookie) res.setHeader('set-cookie', setCookie);
+  async register(@Body() body: RegisterDto): Promise<{ message: string }> {
+    await this.authService.register(body);
 
     return {
-      data: result.data.response.user,
-      error: null,
+      message: 'Se o email estiver cadastrado, enviaremos um email.',
     };
   }
 
@@ -58,75 +40,55 @@ export class AuthController {
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<ApiResponse<LoginResponse>> {
+  ): Promise<LoginResponse> {
     const result = await this.authService.login(body);
-
-    if ('error' in result) {
-      return {
-        data: null,
-        error: {
-          message: result.error.message,
-          status: String(result.error.status),
-        },
-      };
-    }
 
     const setCookie = result.headers.get('set-cookie');
     if (setCookie) res.setHeader('set-cookie', setCookie);
 
     return {
-      data: result.response,
-      error: null,
+      user: result.response.user,
     };
   }
 
   @Post('request-reset-password')
   async requestResetPassoword(
     @Body() body: RequestResetPasswordDto,
-  ): Promise<ApiResponse<string>> {
-    const result = await this.authService.requestResetPassoword(body);
-
-    if ('error' in result) {
-      return {
-        data: null,
-        error: {
-          message: result.error.message,
-        },
-      };
-    }
+  ): Promise<{ message: string }> {
+    await this.authService.requestResetPassoword(body);
 
     return {
-      data: result.response.message,
-      error: null,
+      message: 'Se o email estiver cadastrado, enviaremos instruções.',
     };
   }
 
   @Post('reset-password')
-  async ResetPassoword(
+  async resetPassword(
     @Body() body: ResetPasswordDto,
-  ): Promise<ApiResponse<null>> {
-    const result = await this.authService.resetPassword(body);
-
-    if ('error' in result) {
-      return {
-        data: null,
-        error: {
-          message: result.error.message,
-        },
-      };
-    }
+  ): Promise<{ message: string }> {
+    await this.authService.resetPassword(body);
 
     return {
-      data: null,
-      error: null,
+      message: 'Senha trocada com sucesso',
     };
   }
 
-  @Post('test commit no pr')
-  async test() {}
+  @Post('send-verification-email')
+  async sendVerificationEmail(
+    @Body() body: SendVerificationDto,
+  ): Promise<{ message: string }> {
+    await this.authService.sendEmailVerification(body);
+
+    return {
+      message: 'Se o email estiver cadastrado, enviaremos instruções.',
+    };
+  }
 
   @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ message: string }> {
     const headers = new Headers();
     const cookie = req.headers.cookie;
     if (cookie) headers.set('cookie', cookie);
@@ -136,7 +98,9 @@ export class AuthController {
     const setCookie = result.headers?.get('set-cookie');
     if (setCookie) res.setHeader('set-cookie', setCookie);
 
-    return result.response;
+    return {
+      message: 'Logout successfully',
+    };
   }
 
   @Get('me')
@@ -151,7 +115,6 @@ export class AuthController {
   @All('*')
   async handler(@Req() req: any, @Res() res: any) {
     const url = `http://${req.headers.host}${req.originalUrl}`;
-
     const headers = new Headers();
 
     for (const [key, value] of Object.entries(req.headers)) {

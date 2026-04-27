@@ -1,13 +1,20 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { APIError } from 'better-auth/api';
 import slugify from 'slugify';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
+import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import type { BetterAuth } from '../better-auth';
 import { AUTH_INSTANCE } from '../common/auth/auth';
+import { authErrorMap } from './types/erros-code.auth';
 
 @Injectable()
 export class AuthService {
@@ -22,17 +29,10 @@ export class AuthService {
     });
 
     if (existingUser) {
-      return {
-        data: null,
-        error: {
-          message: 'Este email ja esta sendo ultilizado, tente outro',
-          status: 'USER_ALREADY_EXIST',
-        },
-      };
+      throw new ConflictException('Email já está em uso');
     }
 
     const user = await this.auth.api.signUpEmail({
-      returnHeaders: true,
       body: {
         ...body,
       },
@@ -50,30 +50,26 @@ export class AuthService {
         await tx.membership.create({
           data: {
             tenantId: tenant.id,
-            userId: user.response.user.id,
+            userId: user.user.id,
             role: 'OWNER',
           },
         });
       });
 
       return {
-        data: user,
-        error: null,
+        user: user.user,
       };
     } catch (e) {
       await this.prisma.user.delete({
-        where: {
-          id: user.response.user.id,
-        },
+        where: { id: user.user.id },
       });
 
       if (e instanceof APIError) {
-        return {
-          error: {
-            message: e.message,
-            status: e.status,
-          },
-        };
+        const code = e.body?.code!;
+
+        const message = authErrorMap[code] ?? 'Erro inesperado';
+
+        throw new HttpException({ message }, e.statusCode ?? 400);
       }
 
       throw e;
@@ -88,7 +84,11 @@ export class AuthService {
       });
     } catch (e) {
       if (e instanceof APIError) {
-        return { error: { message: e.message, status: e.status } };
+        const code = e.body?.code!;
+
+        const message = authErrorMap[code] ?? 'Erro inesperado';
+
+        throw new HttpException({ message }, e.statusCode ?? 400);
       }
 
       throw e;
@@ -103,7 +103,32 @@ export class AuthService {
       });
     } catch (e) {
       if (e instanceof APIError) {
-        return { error: { message: e.message, status: e.status } };
+        const code = e.body?.code!;
+
+        const message = authErrorMap[code] ?? 'Erro inesperado';
+
+        throw new HttpException({ message }, e.statusCode ?? 400);
+      }
+
+      throw e;
+    }
+  }
+
+  async sendEmailVerification(body: SendVerificationDto) {
+    try {
+      return await this.auth.api.sendVerificationEmail({
+        returnHeaders: true,
+        body: {
+          ...body,
+        },
+      });
+    } catch (e) {
+      if (e instanceof APIError) {
+        const code = e.body?.code!;
+
+        const message = authErrorMap[code] ?? 'Erro inesperado';
+
+        throw new HttpException({ message }, e.statusCode ?? 400);
       }
 
       throw e;
@@ -121,7 +146,11 @@ export class AuthService {
       });
     } catch (e) {
       if (e instanceof APIError) {
-        return { error: { message: e.message, status: e.status } };
+        const code = e.body?.code!;
+
+        const message = authErrorMap[code] ?? 'Erro inesperado';
+
+        throw new HttpException({ message }, e.statusCode ?? 400);
       }
 
       throw e;

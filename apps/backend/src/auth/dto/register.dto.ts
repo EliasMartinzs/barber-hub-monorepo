@@ -2,22 +2,22 @@ import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(2)
-  name: string;
+  name!: string;
 
   @IsString()
   @MinLength(8)
   @MaxLength(64)
-  password: string;
+  password!: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(64)
-  tenantName: string;
+  tenantName!: string;
 
   @IsString()
-  callbackURL: string;
+  callbackURL!: string;
 }
