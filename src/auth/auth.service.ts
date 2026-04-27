@@ -44,6 +44,7 @@ export class AuthService {
           data: {
             name: body.tenantName,
             slug: this.generateTenantSlug(body.tenantName),
+            ownerId: user.user.id,
           },
         });
 
@@ -78,10 +79,31 @@ export class AuthService {
 
   async login(body: LoginDto) {
     try {
-      return await this.auth.api.signInEmail({
+      const result = await this.auth.api.signInEmail({
         returnHeaders: true,
         body,
       });
+
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: result.response.user.id,
+        },
+        select: {
+          tenant: {
+            select: {
+              slug: true,
+            },
+          },
+        },
+      });
+
+      return {
+        headers: result.headers,
+        user: {
+          ...result.response.user,
+          slug: user?.tenant?.slug,
+        },
+      };
     } catch (e) {
       if (e instanceof APIError) {
         const code = e.body?.code!;

@@ -8,8 +8,6 @@ model PortfolioPost {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  barber Membership @relation(fields: [barberId], references: [id], onDelete: Cascade)
-
   @@index([tenantId])
   @@index([barberId])
 }

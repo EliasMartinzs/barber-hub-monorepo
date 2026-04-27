@@ -9,23 +9,13 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-interface LoginResponse {
-  user?: {
-    id: string;
-    email: string;
-    name?: string | null;
-    image?: string | null;
-    createdAt?: Date;
-    updatedAt?: Date;
-    [key: string]: unknown;
-  };
-}
 import type { Request, Response } from 'express';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
+import { LoginResponse } from 'src/auth/types/login-response';
 import { AUTH_INSTANCE } from 'src/common/auth/auth';
 import { AuthService } from './auth.service';
 
@@ -57,7 +47,7 @@ export class AuthController {
     if (setCookie) res.setHeader('set-cookie', setCookie);
 
     return {
-      user: result.response.user,
+      user: result.user,
     };
   }
 

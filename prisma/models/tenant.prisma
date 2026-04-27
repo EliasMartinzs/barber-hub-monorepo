@@ -8,8 +8,10 @@ model Tenant {
   memberships    Membership[]
   customers      Customer[]
   services       Service[]
-  appointments   Appointment[]
   portfolioPosts PortfolioPost[]
+
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("tenant")
 }

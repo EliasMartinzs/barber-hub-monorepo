@@ -9,7 +9,5 @@ model Service {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  appointments Appointment[]
-
   @@index([tenantId])
 }

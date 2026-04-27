@@ -10,7 +10,8 @@ model User {
   accounts      Account[]
 
   memberships Membership[]
-  customers   Customer[]   @relation("CustomerUser")
+  customer    Customer?
+  tenant      Tenant?
 
   @@unique([email])
   @@map("user")
