@@ -7,13 +7,19 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
 import { AuthGuard } from 'src/common/auth/guards/auth.guard';
 import { CreateServiceDto } from 'src/service/dto/create-service.dto';
 import { EditServiceDto } from 'src/service/dto/edit-service.dto';
-import { ServiceResponse } from 'src/service/types/service-response';
+import { GetServicesQueryDto } from 'src/service/dto/get-service-query.dto';
+import { UpdateStatusDto } from 'src/service/dto/update-status.dto';
+import {
+  GetServicesResponse,
+  ServiceResponse,
+} from 'src/service/types/service-response';
 import { ServiceService } from './service.service';
 
 @Controller('service')
@@ -22,8 +28,11 @@ export class ServiceController {
 
   @UseGuards(AuthGuard)
   @Get('/')
-  async getAll(@CurrentTenant() tenantId: string): Promise<ServiceResponse[]> {
-    return await this.serviceService.getAllService(tenantId);
+  async getAll(
+    @Query() query: GetServicesQueryDto,
+    @CurrentTenant() tenantId: string,
+  ): Promise<GetServicesResponse> {
+    return await this.serviceService.getAllService(tenantId, query);
   }
 
   @UseGuards(AuthGuard)
@@ -64,5 +73,16 @@ export class ServiceController {
     return {
       message: 'Serviço removido com sucesso',
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(':id/status')
+  async toggleServicesStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusDto,
+  ): Promise<{ message: string }> {
+    await this.serviceService.updateStatus(id, updateStatusDto.isActive);
+
+    return { message: 'Status atualizado' };
   }
 }

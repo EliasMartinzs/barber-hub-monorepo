@@ -4,8 +4,8 @@ export type ServiceResponse = Prisma.ServiceGetPayload<{
   select: {
     id: true;
     tenantId: true;
-    name: true;
     description: true;
+    name: true;
     price: true;
     durationInMinutes: true;
     isActive: true;
@@ -15,3 +15,13 @@ export type ServiceResponse = Prisma.ServiceGetPayload<{
     updatedAt: true;
   };
 }>;
+
+export interface GetServicesResponse {
+  data: ServiceResponse[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}

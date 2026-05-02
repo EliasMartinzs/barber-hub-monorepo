@@ -12,8 +12,6 @@ export const CurrentUser = createParamDecorator(
 
     const user = req.session?.user;
 
-    console.log(user);
-
     if (!user) {
       throw new UnauthorizedException();
     }

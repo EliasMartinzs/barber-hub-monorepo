@@ -29,7 +29,7 @@ export class EditServiceDto {
 
   @IsString()
   @IsOptional()
-  imageUrl!: string;
+  imageKey!: string;
 
   @IsInt()
   @IsOptional()
