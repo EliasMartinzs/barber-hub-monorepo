@@ -108,8 +108,10 @@ export class AuthService {
         select: {
           memberships: {
             select: {
+              role: true,
               tenant: {
                 select: {
+                  id: true,
                   slug: true,
                 },
               },
@@ -181,42 +183,6 @@ export class AuthService {
       returnHeaders: true,
       headers,
     });
-  }
-
-  async getSession(headers: Headers) {
-    try {
-      const result = await this.auth.api.getSession({
-        headers,
-        returnHeaders: true,
-      });
-
-      if (!result?.response?.user?.id) {
-        return null;
-      }
-
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: result.response.user.id,
-        },
-        include: {
-          memberships: {
-            select: {
-              role: true,
-              tenant: true,
-            },
-          },
-          customer: true,
-        },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException();
-      }
-
-      return user;
-    } catch {
-      return null;
-    }
   }
 
   generateTenantSlug(name: string) {

@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import { AppModule } from './app.module';
 
@@ -12,6 +13,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.use(express.json());
+  app.use(cookieParser());
 
   app.enableCors({
     origin: 'http://localhost:3001',

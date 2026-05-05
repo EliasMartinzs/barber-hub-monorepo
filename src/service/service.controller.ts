@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
 import { AuthGuard } from 'src/common/auth/guards/auth.guard';
-import { TenantMembershipGuard } from 'src/common/auth/guards/tenant-membership.guard';
 import { PermissionGuard } from 'src/rbac/guards/permission.guard';
 import { RequirePermission } from 'src/rbac/require-permission';
 import { CreateServiceDto } from 'src/service/dto/create-service.dto';
@@ -29,7 +28,8 @@ import { ServiceService } from './service.service';
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('view:service')
   @Get('/')
   async getAll(
     @Query() query: GetServicesQueryDto,
@@ -38,13 +38,14 @@ export class ServiceController {
     return await this.serviceService.getAllService(tenantId, query);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('view:service')
   @Get('/:id')
   async getById(@Param('id') id: string): Promise<ServiceResponse> {
     return await this.serviceService.getServiceById(id);
   }
 
-  @UseGuards(AuthGuard, TenantMembershipGuard, PermissionGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @RequirePermission('create:service')
   @Post('/:slug')
   async create(
@@ -54,7 +55,8 @@ export class ServiceController {
     return await this.serviceService.createService(tenantId, create);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('update:service')
   @HttpCode(200)
   @Patch('/:id')
   async edit(
@@ -68,7 +70,8 @@ export class ServiceController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('delete:service')
   @HttpCode(200)
   @Delete('/:id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
@@ -79,7 +82,8 @@ export class ServiceController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('update:service')
   @Patch(':id/status')
   async toggleServicesStatus(
     @Param('id') id: string,

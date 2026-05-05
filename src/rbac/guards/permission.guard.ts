@@ -5,8 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { hasPermission } from 'src/rbac/rbac.service';
 import { REQUIRE_PERMISSION_KEY } from 'src/rbac/require-permission';
-import { hasPermission } from '../rbac.service';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -20,26 +20,19 @@ export class PermissionGuard implements CanActivate {
 
     if (!permission) return true;
 
-    const request = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest();
 
-    const membership = request.membership;
+    const role = req.role;
 
-    if (!membership) {
-      throw new ForbiddenException('Membership not loaded');
+    if (!role) {
+      throw new ForbiddenException('Usuário sem role no tenant');
     }
 
-    if (!membership.role) {
-      throw new ForbiddenException('Role not found for tenant');
-    }
-
-    const allowed = hasPermission(membership.role, permission);
+    const allowed = hasPermission(role, permission);
 
     if (!allowed) {
-      throw new ForbiddenException('Insufficient permission');
+      throw new ForbiddenException('Permissão insuficiente');
     }
-
-    request.role = membership.role;
-    request.tenantId = membership.tenantId;
 
     return true;
   }

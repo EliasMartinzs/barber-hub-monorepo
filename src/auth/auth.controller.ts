@@ -18,7 +18,7 @@ import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
 import { LoginResponse } from 'src/auth/types/login-response';
-import { UserMeResponse } from 'src/auth/types/user-response';
+import { MeResponse } from 'src/auth/types/me-response';
 import { AUTH_INSTANCE } from 'src/common/auth/auth';
 import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
 import { AuthGuard } from 'src/common/auth/guards/auth.guard';
@@ -61,7 +61,6 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponse> {
     const result = await this.authService.login(body);
-
     const setCookie = result.headers.get('set-cookie');
     if (setCookie) res.setHeader('set-cookie', setCookie);
 
@@ -131,15 +130,16 @@ export class AuthController {
   }
 
   @Get('me')
-  async me(@Req() req: Request): Promise<UserMeResponse | null> {
-    const headers = new Headers();
-    const cookie = req.headers.cookie;
+  me(@Req() req: any): MeResponse | null {
+    if (!req.session?.user) {
+      return null;
+    }
 
-    if (cookie) headers.set('cookie', cookie);
-
-    const user = await this.authService.getSession(headers);
-
-    return { user: user ?? null };
+    return {
+      user: req.session.user,
+      tenant: req.tenant,
+      role: req.role,
+    };
   }
 
   @All('*')
