@@ -1,6 +1,7 @@
 enum MembershipRole {
   OWNER
   BARBER
+  CLIENT
 }
 
 enum AppointmentStatus {

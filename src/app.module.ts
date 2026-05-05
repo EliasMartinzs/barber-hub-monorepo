@@ -11,6 +11,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { MailModule } from './mail/mail.module';
 import { ServiceModule } from './service/service.module';
 import { UploadModule } from './upload/upload.module';
+import { ClientModule } from './client/client.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UploadModule } from './upload/upload.module';
     ServiceModule,
     UploadModule,
     JobsModule,
+    ClientModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

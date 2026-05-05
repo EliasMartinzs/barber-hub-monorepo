@@ -4,7 +4,7 @@ model Customer {
   userId   String? @unique
 
   name  String
-  phone String
+  phone String? 
   notes String?
 
   barberId String?

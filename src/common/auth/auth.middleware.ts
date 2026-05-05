@@ -1,13 +1,13 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
+import type { AuthInstance } from 'src/better-auth';
 import { PrismaService } from 'src/common/prisma/prisma.service';
-import type { BetterAuth } from '../../better-auth';
 import { AUTH_INSTANCE } from './auth';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(
-    @Inject(AUTH_INSTANCE) private readonly auth: BetterAuth,
+    @Inject(AUTH_INSTANCE) private readonly auth: AuthInstance,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -22,22 +22,10 @@ export class AuthMiddleware implements NestMiddleware {
         return next();
       }
 
-      const membership = await this.prisma.membership.findUnique({
-        where: {
-          userId: session.user.id,
-        },
-        select: {
-          tenantId: true,
-          role: true,
-        },
-      });
-
       (req as any).session = {
         ...session,
-        tenantId: membership?.tenantId,
-        role: membership?.role,
       };
-    } catch (e) {
+    } catch {
       (req as any).session = null;
     }
     next();

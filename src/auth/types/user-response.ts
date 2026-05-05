@@ -11,3 +11,7 @@ export type UserResponse = Prisma.UserGetPayload<{
     customer: true;
   };
 }>;
+
+export type UserMeResponse = {
+  user: UserResponse | null;
+};

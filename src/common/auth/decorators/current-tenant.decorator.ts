@@ -1,20 +1,9 @@
-import {
-  createParamDecorator,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { AuthRequest } from 'src/common/auth/types/session-request';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export const CurrentTenant = createParamDecorator(
-  (_: unknown, ctx: ExecutionContext) => {
-    const req = ctx.switchToHttp().getRequest<AuthRequest>();
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
 
-    const tenantId = req.session?.tenantId;
-
-    if (!tenantId) {
-      throw new UnauthorizedException();
-    }
-
-    return tenantId;
+    return request.tenantId;
   },
 );

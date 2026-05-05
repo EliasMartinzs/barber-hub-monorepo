@@ -7,17 +7,23 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { LoginDto } from 'src/auth/dto/login.dto';
+import { MagicLinkDto } from 'src/auth/dto/magic-link.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
 import { LoginResponse } from 'src/auth/types/login-response';
-import { UserResponse } from 'src/auth/types/user-response';
+import { UserMeResponse } from 'src/auth/types/user-response';
 import { AUTH_INSTANCE } from 'src/common/auth/auth';
+import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
+import { AuthGuard } from 'src/common/auth/guards/auth.guard';
+import { TenantMembershipGuard } from 'src/common/auth/guards/tenant-membership.guard';
+import { PermissionGuard } from 'src/rbac/guards/permission.guard';
 import { AuthService } from './auth.service';
 
 @ApiTags('auth')
@@ -35,6 +41,18 @@ export class AuthController {
     return {
       message: 'Se o email estiver cadastrado, enviaremos um email.',
     };
+  }
+
+  @UseGuards(AuthGuard, TenantMembershipGuard, PermissionGuard)
+  @Post('/:slug/magic-link')
+  async registerWithMagicLink(
+    @CurrentTenant() tenantId: string,
+    @Body() body: MagicLinkDto,
+    @Req() req: Request,
+  ): Promise<{ message: string }> {
+    await this.authService.registerWithMagicLink(tenantId, body, req);
+
+    return { message: 'Email enviado' };
   }
 
   @Post('login')
@@ -113,14 +131,15 @@ export class AuthController {
   }
 
   @Get('me')
-  async me(@Req() req: Request): Promise<UserResponse | null> {
+  async me(@Req() req: Request): Promise<UserMeResponse | null> {
     const headers = new Headers();
     const cookie = req.headers.cookie;
 
     if (cookie) headers.set('cookie', cookie);
 
     const user = await this.authService.getSession(headers);
-    return user;
+
+    return { user: user ?? null };
   }
 
   @All('*')

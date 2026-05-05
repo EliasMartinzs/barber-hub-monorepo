@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { handlePrismaError } from 'src/common/prisma/errors/handle-prisma-error';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { s3Client } from 'src/common/S3/s3.service';
+import { handleError } from 'src/errors/handle-error';
 import { CreateServiceDto } from 'src/service/dto/create-service.dto';
 import { EditServiceDto } from 'src/service/dto/edit-service.dto';
 import { GetServicesQueryDto } from 'src/service/dto/get-service-query.dto';
@@ -16,14 +16,14 @@ export class ServiceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllService(tenantId: string, query: GetServicesQueryDto) {
+    const { limit, page, isActive } = query;
+
+    const where: any = {
+      tenantId,
+      ...(typeof isActive === 'boolean' && { isActive }),
+    };
+
     try {
-      const { limit, page, isActive } = query;
-
-      const where: any = {
-        tenantId,
-        ...(typeof isActive === 'boolean' && { isActive }),
-      };
-
       const [data, total] = await this.prisma.$transaction([
         this.prisma.service.findMany({
           where,
@@ -59,7 +59,7 @@ export class ServiceService {
         },
       };
     } catch (e) {
-      handlePrismaError(e);
+      handleError(e);
     }
   }
 
@@ -90,7 +90,7 @@ export class ServiceService {
 
       return result;
     } catch (e) {
-      handlePrismaError(e);
+      handleError(e);
     }
   }
 
@@ -132,7 +132,8 @@ export class ServiceService {
         },
       });
     } catch (e) {
-      handlePrismaError(e);
+      console.log(e);
+      handleError(e);
     }
   }
 
@@ -174,7 +175,7 @@ export class ServiceService {
         },
       });
     } catch (e) {
-      handlePrismaError(e);
+      handleError(e);
     }
   }
 
@@ -184,7 +185,7 @@ export class ServiceService {
         where: { id },
       });
     } catch (e) {
-      handlePrismaError(e);
+      handleError(e);
     }
   }
 

@@ -1,6 +1,6 @@
 model Membership {
   id       String         @id @default(uuid())
-  userId   String         @unique
+  userId   String
   tenantId String
   role     MembershipRole
 
@@ -10,5 +10,6 @@ model Membership {
   createdAt    DateTime      @default(now())
   appointments Appointment[]
 
+  @@unique([userId, tenantId])
   @@index([tenantId])
 }

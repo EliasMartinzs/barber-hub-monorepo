@@ -1,27 +1,27 @@
 import {
   ConflictException,
-  HttpException,
   Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { APIError } from 'better-auth/api';
+import { Request } from 'express';
 import slugify from 'slugify';
 import { LoginDto } from 'src/auth/dto/login.dto';
+import { MagicLinkDto } from 'src/auth/dto/magic-link.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { RequestResetPasswordDto } from 'src/auth/dto/request-reset-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
+import type { AuthInstance } from 'src/better-auth';
 import { PrismaService } from 'src/common/prisma/prisma.service';
-import type { BetterAuth } from '../better-auth';
+import { handleError } from 'src/errors/handle-error';
 import { AUTH_INSTANCE } from '../common/auth/auth';
-import { authErrorMap } from './types/erros-code.auth';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(AUTH_INSTANCE) private readonly auth: BetterAuth,
+    @Inject(AUTH_INSTANCE) private readonly auth: AuthInstance,
   ) {}
 
   async register(body: RegisterDto) {
@@ -60,20 +60,37 @@ export class AuthService {
       return {
         user: user.user,
       };
-    } catch (e) {
-      await this.prisma.user.delete({
-        where: { id: user.user.id },
-      });
-
-      if (e instanceof APIError) {
-        const code = e.body?.code!;
-
-        const message = authErrorMap[code] ?? 'Erro inesperado';
-
-        throw new HttpException({ message }, e.statusCode ?? 400);
+    } catch (error) {
+      try {
+        await this.prisma.user.delete({
+          where: { id: user.user.id },
+        });
+      } catch (e) {
+        handleError(e);
       }
 
-      throw e;
+      handleError(error);
+    }
+  }
+
+  async registerWithMagicLink(
+    tenantId: string,
+    body: MagicLinkDto,
+    req: Request,
+  ) {
+    try {
+      return await this.auth.api.signInMagicLink({
+        body: {
+          email: body.email,
+          name: body.name,
+          callbackURL: body.callbackURL,
+          newUserCallbackURL: `${body.newUserCallbackURL}/${tenantId}`,
+          errorCallbackURL: body.errorCallbackURL,
+        },
+        headers: req.headers as any,
+      });
+    } catch (e) {
+      handleError(e);
     }
   }
 
@@ -101,7 +118,9 @@ export class AuthService {
         },
       });
 
-      if (!user?.memberships[0].tenant.slug) {
+      const slug = user?.memberships?.[0]?.tenant?.slug;
+
+      if (!slug) {
         throw new UnauthorizedException(
           'Usuário não possui uma barbearia associada',
         );
@@ -111,19 +130,11 @@ export class AuthService {
         headers: result.headers,
         user: {
           ...result.response.user,
-          slug: user?.memberships[0].tenant.slug,
+          slug,
         },
       };
     } catch (e) {
-      if (e instanceof APIError) {
-        const code = e.body?.code!;
-
-        const message = authErrorMap[code] ?? 'Erro inesperado';
-
-        throw new HttpException({ message, code }, e.statusCode ?? 400);
-      }
-
-      throw e;
+      handleError(e);
     }
   }
 
@@ -134,15 +145,7 @@ export class AuthService {
         body,
       });
     } catch (e) {
-      if (e instanceof APIError) {
-        const code = e.body?.code!;
-
-        const message = authErrorMap[code] ?? 'Erro inesperado';
-
-        throw new HttpException({ message }, e.statusCode ?? 400);
-      }
-
-      throw e;
+      handleError(e);
     }
   }
 
@@ -155,15 +158,7 @@ export class AuthService {
         },
       });
     } catch (e) {
-      if (e instanceof APIError) {
-        const code = e.body?.code!;
-
-        const message = authErrorMap[code] ?? 'Erro inesperado';
-
-        throw new HttpException({ message }, e.statusCode ?? 400);
-      }
-
-      throw e;
+      handleError(e);
     }
   }
 
@@ -177,15 +172,7 @@ export class AuthService {
         },
       });
     } catch (e) {
-      if (e instanceof APIError) {
-        const code = e.body?.code!;
-
-        const message = authErrorMap[code] ?? 'Erro inesperado';
-
-        throw new HttpException({ message }, e.statusCode ?? 400);
-      }
-
-      throw e;
+      handleError(e);
     }
   }
 
@@ -197,31 +184,39 @@ export class AuthService {
   }
 
   async getSession(headers: Headers) {
-    const result = await this.auth.api.getSession({
-      headers,
-      returnHeaders: true,
-    });
+    try {
+      const result = await this.auth.api.getSession({
+        headers,
+        returnHeaders: true,
+      });
 
-    if (!result?.response?.user.id) {
+      if (!result?.response?.user?.id) {
+        return null;
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: result.response.user.id,
+        },
+        include: {
+          memberships: {
+            select: {
+              role: true,
+              tenant: true,
+            },
+          },
+          customer: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+
+      return user;
+    } catch {
       return null;
     }
-
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: result.response.user.id,
-      },
-      include: {
-        memberships: {
-          select: {
-            role: true,
-            tenant: true,
-          },
-        },
-        customer: true,
-      },
-    });
-
-    return user;
   }
 
   generateTenantSlug(name: string) {

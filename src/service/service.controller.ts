@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common';
 import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
 import { AuthGuard } from 'src/common/auth/guards/auth.guard';
+import { TenantMembershipGuard } from 'src/common/auth/guards/tenant-membership.guard';
+import { PermissionGuard } from 'src/rbac/guards/permission.guard';
+import { RequirePermission } from 'src/rbac/require-permission';
 import { CreateServiceDto } from 'src/service/dto/create-service.dto';
 import { EditServiceDto } from 'src/service/dto/edit-service.dto';
 import { GetServicesQueryDto } from 'src/service/dto/get-service-query.dto';
@@ -41,8 +44,9 @@ export class ServiceController {
     return await this.serviceService.getServiceById(id);
   }
 
-  @UseGuards(AuthGuard)
-  @Post('/')
+  @UseGuards(AuthGuard, TenantMembershipGuard, PermissionGuard)
+  @RequirePermission('create:service')
+  @Post('/:slug')
   async create(
     @CurrentTenant() tenantId: string,
     @Body() create: CreateServiceDto,
