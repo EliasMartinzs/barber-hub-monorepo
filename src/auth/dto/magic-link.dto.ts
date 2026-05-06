@@ -8,6 +8,9 @@ export class MagicLinkDto {
   name!: string;
 
   @IsString()
+  tenantId!: string;
+
+  @IsString()
   callbackURL!: string;
 
   @IsString()

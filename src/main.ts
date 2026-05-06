@@ -22,8 +22,8 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // remove campos extras
-      forbidNonWhitelisted: true, // erro se mandar campo extra
+      whitelist: true,
+      forbidNonWhitelisted: true,
       transform: true,
     }),
   );

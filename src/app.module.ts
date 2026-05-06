@@ -1,3 +1,4 @@
+import { ArcjetModule, detectBot, shield } from '@arcjet/nest';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -16,8 +17,22 @@ import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     ScheduleModule.forRoot(),
+    ArcjetModule.forRoot({
+      isGlobal: true,
+      key: process.env.ARCJET_KEY!,
+      characteristics: ['ip.src'],
+      rules: [
+        shield({ mode: 'LIVE' }),
+        detectBot({
+          mode: 'LIVE',
+          allow: ['CATEGORY:SEARCH_ENGINE'],
+        }),
+      ],
+    }),
     AuthModule,
     PrismaModule,
     MailModule,
@@ -25,6 +40,7 @@ import { UploadModule } from './upload/upload.module';
     UploadModule,
     JobsModule,
     ClientModule,
+    ArcjetModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

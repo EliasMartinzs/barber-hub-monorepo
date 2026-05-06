@@ -16,14 +16,9 @@ export class ContextMiddleware implements NestMiddleware {
 
     const user = session.user;
 
-    const tenantSlug = req.cookies?.tenant_slug;
-
     const membership = await this.prisma.membership.findFirst({
       where: {
         userId: user.id,
-        tenant: {
-          slug: tenantSlug,
-        },
       },
       include: {
         tenant: true,

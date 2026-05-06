@@ -8,8 +8,11 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { type Request } from 'express';
+import { ArcjetService } from 'src/arcjet/arcjet.service';
 import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
 import { AuthGuard } from 'src/common/auth/guards/auth.guard';
 import { PermissionGuard } from 'src/rbac/guards/permission.guard';
@@ -26,7 +29,10 @@ import { ServiceService } from './service.service';
 
 @Controller('service')
 export class ServiceController {
-  constructor(private readonly serviceService: ServiceService) {}
+  constructor(
+    private readonly serviceService: ServiceService,
+    private readonly arcjet: ArcjetService,
+  ) {}
 
   @UseGuards(AuthGuard, PermissionGuard)
   @RequirePermission('view:service')
@@ -45,13 +51,18 @@ export class ServiceController {
     return await this.serviceService.getServiceById(id);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
   @RequirePermission('create:service')
   @Post('/:slug')
   async create(
+    @Req() req: Request,
     @CurrentTenant() tenantId: string,
     @Body() create: CreateServiceDto,
   ): Promise<ServiceResponse> {
+    await this.arcjet.rateLimit(
+      req,
+      'Você já criou muitos serviços. Aguarde 1 minuto.',
+    );
+
     return await this.serviceService.createService(tenantId, create);
   }
 
@@ -60,9 +71,15 @@ export class ServiceController {
   @HttpCode(200)
   @Patch('/:id')
   async edit(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() edit: EditServiceDto,
   ): Promise<{ message: string }> {
+    await this.arcjet.rateLimit(
+      req,
+      'Você já editou muitos serviços. Aguarde 1 minuto.',
+    );
+
     await this.serviceService.editService(id, edit);
 
     return {
@@ -74,7 +91,15 @@ export class ServiceController {
   @RequirePermission('delete:service')
   @HttpCode(200)
   @Delete('/:id')
-  async delete(@Param('id') id: string): Promise<{ message: string }> {
+  async delete(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.arcjet.rateLimit(
+      req,
+      'Você já deletou muitos serviços. Aguarde 1 minuto.',
+    );
+
     await this.serviceService.deleteService(id);
 
     return {
@@ -86,9 +111,18 @@ export class ServiceController {
   @RequirePermission('update:service')
   @Patch(':id/status')
   async toggleServicesStatus(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateStatusDto,
   ): Promise<{ message: string }> {
+    await this.arcjet.rateLimit(
+      req,
+      'Você já editou muitos serviços. Aguarde 1 minuto.',
+      {
+        max: 25,
+      },
+    );
+
     await this.serviceService.updateStatus(id, updateStatusDto.isActive);
 
     return { message: 'Status atualizado' };

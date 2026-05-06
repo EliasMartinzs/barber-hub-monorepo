@@ -73,22 +73,31 @@ export class AuthService {
     }
   }
 
-  async registerWithMagicLink(
-    tenantId: string,
-    body: MagicLinkDto,
-    req: Request,
-  ) {
+  async registerWithMagicLink(slug: string, body: MagicLinkDto, req: Request) {
     try {
-      return await this.auth.api.signInMagicLink({
+      await this.prisma.pendingMagicLink.deleteMany({
+        where: { email: body.email },
+      });
+
+      await this.prisma.pendingMagicLink.create({
+        data: {
+          email: body.email,
+          tenantId: body.tenantId,
+        },
+      });
+
+      const result = await this.auth.api.signInMagicLink({
         body: {
           email: body.email,
           name: body.name,
           callbackURL: body.callbackURL,
-          newUserCallbackURL: `${body.newUserCallbackURL}/${tenantId}`,
+          newUserCallbackURL: `${body.newUserCallbackURL}/${slug}`,
           errorCallbackURL: body.errorCallbackURL,
         },
         headers: req.headers as any,
       });
+
+      return result;
     } catch (e) {
       handleError(e);
     }

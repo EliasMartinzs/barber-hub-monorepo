@@ -4,10 +4,10 @@ import {
   Controller,
   Get,
   Inject,
+  Param,
   Post,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -20,10 +20,6 @@ import { SendVerificationDto } from 'src/auth/dto/send-verification.dto';
 import { LoginResponse } from 'src/auth/types/login-response';
 import { MeResponse } from 'src/auth/types/me-response';
 import { AUTH_INSTANCE } from 'src/common/auth/auth';
-import { CurrentTenant } from 'src/common/auth/decorators/current-tenant.decorator';
-import { AuthGuard } from 'src/common/auth/guards/auth.guard';
-import { TenantMembershipGuard } from 'src/common/auth/guards/tenant-membership.guard';
-import { PermissionGuard } from 'src/rbac/guards/permission.guard';
 import { AuthService } from './auth.service';
 
 @ApiTags('auth')
@@ -43,14 +39,13 @@ export class AuthController {
     };
   }
 
-  @UseGuards(AuthGuard, TenantMembershipGuard, PermissionGuard)
   @Post('/:slug/magic-link')
   async registerWithMagicLink(
-    @CurrentTenant() tenantId: string,
+    @Param('slug') slug: string,
     @Body() body: MagicLinkDto,
     @Req() req: Request,
   ): Promise<{ message: string }> {
-    await this.authService.registerWithMagicLink(tenantId, body, req);
+    await this.authService.registerWithMagicLink(slug, body, req);
 
     return { message: 'Email enviado' };
   }

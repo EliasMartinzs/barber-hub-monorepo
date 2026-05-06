@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { createAuthMiddleware } from 'better-auth/api';
 import { magicLink } from 'better-auth/plugins';
 import { MailModule } from 'src/mail/mail.module';
 import { MailService } from 'src/mail/mail.service';
@@ -49,6 +50,60 @@ const isProd = process.env.NODE_ENV === 'production';
             deleteUser: {
               enabled: true,
             },
+          },
+          hooks: {
+            after: createAuthMiddleware(async (ctx) => {
+              if (!ctx.path.startsWith('/magic-link')) return;
+
+              const user = ctx.context.newSession?.user;
+              if (!user) return;
+
+              await prisma.$transaction(async (tx) => {
+                const pending = await tx.pendingMagicLink.findFirst({
+                  where: {
+                    email: user.email,
+                    used: false,
+                  },
+                  orderBy: { createdAt: 'desc' },
+                });
+
+                if (!pending) return;
+
+                await tx.pendingMagicLink.update({
+                  where: { id: pending.id },
+                  data: { used: true },
+                });
+
+                await tx.customer.upsert({
+                  where: { userId: user.id },
+                  create: {
+                    userId: user.id,
+                    tenantId: pending.tenantId,
+                    name: user.name,
+                  },
+                  update: {},
+                });
+
+                await tx.membership.upsert({
+                  where: {
+                    userId_tenantId: {
+                      userId: user.id,
+                      tenantId: pending.tenantId,
+                    },
+                  },
+                  create: {
+                    userId: user.id,
+                    tenantId: pending.tenantId,
+                    role: 'CLIENT',
+                  },
+                  update: {},
+                });
+
+                await tx.pendingMagicLink.delete({
+                  where: { id: pending.id },
+                });
+              });
+            }),
           },
           plugins: [
             magicLink({
