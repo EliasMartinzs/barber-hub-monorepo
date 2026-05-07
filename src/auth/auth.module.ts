@@ -9,6 +9,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { createAuthMiddleware } from 'better-auth/api';
 import { magicLink } from 'better-auth/plugins';
+import { ArcjetModule } from 'src/arcjet/arcjet.module';
 import { MailModule } from 'src/mail/mail.module';
 import { MailService } from 'src/mail/mail.service';
 
@@ -16,7 +17,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 @Global()
 @Module({
-  imports: [PrismaModule, MailModule],
+  imports: [PrismaModule, MailModule, ArcjetModule],
   providers: [
     {
       provide: AUTH_INSTANCE,

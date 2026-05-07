@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class FinishRegisterCustomeDto {
+export class FinishRegisterClientDto {
   @IsString()
   tenantId!: string;
 

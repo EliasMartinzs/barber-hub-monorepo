@@ -16,7 +16,7 @@ export class ServiceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllService(tenantId: string, query: GetServicesQueryDto) {
-    const { limit, page, isActive } = query;
+    const { isActive } = query;
 
     const where: any = {
       tenantId,
@@ -24,39 +24,28 @@ export class ServiceService {
     };
 
     try {
-      const [data, total] = await this.prisma.$transaction([
-        this.prisma.service.findMany({
-          where,
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: {
-            createdAt: 'desc',
-          },
-          select: {
-            id: true,
-            tenantId: true,
-            description: true,
-            name: true,
-            price: true,
-            durationInMinutes: true,
-            isActive: true,
-            imageUrl: true,
-            order: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        }),
-        this.prisma.service.count({ where }),
-      ]);
+      const data = await this.prisma.service.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          tenantId: true,
+          description: true,
+          name: true,
+          price: true,
+          durationInMinutes: true,
+          isActive: true,
+          imageUrl: true,
+          order: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
       return {
         data,
-        meta: {
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        },
       };
     } catch (e) {
       handleError(e);

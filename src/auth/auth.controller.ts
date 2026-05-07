@@ -5,12 +5,15 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   Req,
   Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { ArcjetService } from 'src/arcjet/arcjet.service';
+import { FinishRegisterClientDto } from 'src/auth/dto/finish-register-client.dto.ts';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { MagicLinkDto } from 'src/auth/dto/magic-link.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
@@ -27,11 +30,17 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly arcjet: ArcjetService,
     @Inject(AUTH_INSTANCE) private readonly auth: any,
   ) {}
 
   @Post('register')
-  async register(@Body() body: RegisterDto): Promise<{ message: string }> {
+  async register(
+    @Req() req: Request,
+    @Body() body: RegisterDto,
+  ): Promise<{ message: string }> {
+    await this.arcjet.signUp(req, body.email);
+
     await this.authService.register(body);
 
     return {
@@ -45,16 +54,34 @@ export class AuthController {
     @Body() body: MagicLinkDto,
     @Req() req: Request,
   ): Promise<{ message: string }> {
+    await this.arcjet.signUp(req, body.email);
+
     await this.authService.registerWithMagicLink(slug, body, req);
 
     return { message: 'Email enviado' };
+  }
+
+  @Patch(':id/customer')
+  async finishRegisterCustomer(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() body: FinishRegisterClientDto,
+  ): Promise<{
+    message: string;
+  }> {
+    await this.authService.finishRegisterCustomer(req, id, body);
+
+    return { message: 'Cadastro concluido' };
   }
 
   @Post('login')
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<LoginResponse> {
+    await this.arcjet.signUp(req, body.email);
+
     const result = await this.authService.login(body);
     const setCookie = result.headers.get('set-cookie');
     if (setCookie) res.setHeader('set-cookie', setCookie);
@@ -75,7 +102,10 @@ export class AuthController {
   @Post('request-reset-password')
   async requestResetPassoword(
     @Body() body: RequestResetPasswordDto,
+    @Req() req: Request,
   ): Promise<{ message: string }> {
+    await this.arcjet.signUp(req, body.email);
+
     await this.authService.requestResetPassoword(body);
 
     return {
@@ -97,7 +127,10 @@ export class AuthController {
   @Post('send-verification-email')
   async sendVerificationEmail(
     @Body() body: SendVerificationDto,
+    @Req() req: Request,
   ): Promise<{ message: string }> {
+    await this.arcjet.signUp(req, body.email);
+
     await this.authService.sendEmailVerification(body);
 
     return {

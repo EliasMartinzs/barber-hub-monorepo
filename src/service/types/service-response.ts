@@ -18,10 +18,4 @@ export type ServiceResponse = Prisma.ServiceGetPayload<{
 
 export interface GetServicesResponse {
   data: ServiceResponse[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
 }

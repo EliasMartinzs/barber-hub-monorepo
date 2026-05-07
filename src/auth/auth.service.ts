@@ -2,10 +2,12 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import slugify from 'slugify';
+import { FinishRegisterClientDto } from 'src/auth/dto/finish-register-client.dto.ts';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { MagicLinkDto } from 'src/auth/dto/magic-link.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
@@ -98,6 +100,31 @@ export class AuthService {
       });
 
       return result;
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
+  async finishRegisterCustomer(
+    req: Request,
+    id: string,
+    body: FinishRegisterClientDto,
+  ) {
+    if (!id) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    if (!body.tenantId) {
+      throw new NotFoundException('Barbearia não encontrada');
+    }
+
+    try {
+      await this.auth.api.setPassword({
+        body: {
+          newPassword: body.password,
+        },
+        headers: req.headers as any,
+      });
     } catch (e) {
       handleError(e);
     }

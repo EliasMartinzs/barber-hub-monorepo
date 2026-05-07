@@ -6,10 +6,10 @@ import { ContextMiddleware } from 'src/common/middlewares/context.middleware';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { ClientModule } from './client/client.module';
 import { AuthMiddleware } from './common/auth/auth.middleware';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { PrismaService } from './common/prisma/prisma.service';
+import { CustomerModule } from './customer/customer.module';
 import { JobsModule } from './jobs/jobs.module';
 import { MailModule } from './mail/mail.module';
 import { ServiceModule } from './service/service.module';
@@ -39,7 +39,7 @@ import { UploadModule } from './upload/upload.module';
     ServiceModule,
     UploadModule,
     JobsModule,
-    ClientModule,
+    CustomerModule,
     ArcjetModule,
   ],
   controllers: [AppController],
