@@ -2,8 +2,8 @@ model PendingMagicLink {
   id        String   @id @default(uuid())
   email     String
   tenantId  String
-  used      Boolean  @default(false)
   createdAt DateTime @default(now())
+  used      Boolean  @default(false)
 
   @@index([email])
 }

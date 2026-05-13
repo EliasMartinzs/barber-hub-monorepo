@@ -1,0 +1,7 @@
+{
+  "prisma.pinToPrisma6": false,
+  "prisma-smart-formatter.prisma.defaultFormatter": "Prisma.prisma",
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
+}

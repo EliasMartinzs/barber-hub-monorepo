@@ -75,16 +75,6 @@ const isProd = process.env.NODE_ENV === 'production';
                   data: { used: true },
                 });
 
-                await tx.customer.upsert({
-                  where: { userId: user.id },
-                  create: {
-                    userId: user.id,
-                    tenantId: pending.tenantId,
-                    name: user.name,
-                  },
-                  update: {},
-                });
-
                 await tx.membership.upsert({
                   where: {
                     userId_tenantId: {

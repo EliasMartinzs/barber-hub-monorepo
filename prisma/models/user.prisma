@@ -1,25 +1,25 @@
 model User {
-  id            String    @id @default(uuid())
+  id            String       @id @default(uuid())
   name          String
-  email         String
-  emailVerified Boolean   @default(false)
+  email         String       @unique
+  emailVerified Boolean      @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  phone         String?
+  memberships   Membership[]
   accounts      Account[]
+  sessions      Session[]
 
-  memberships Membership[]
-  customer    Customer?
-
-  @@unique([email])
+  @@index([email])
+  @@index([name])
   @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -27,7 +27,6 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@index([userId])
   @@map("session")
 }
@@ -37,7 +36,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -47,6 +45,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("account")
